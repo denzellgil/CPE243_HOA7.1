@@ -1,0 +1,40 @@
+---
+
+- hosts: control
+  become: true
+  pre_tasks:
+
+  - name: Update and upgrade Ubuntu Desktop
+    apt: 
+      upgrade: dist
+      update_cache: yes
+    when: ansible_distribution == "Ubuntu"
+
+- name: Collecting log files from the Control Node
+  become: true
+  hosts: manage
+  tasks: 
+
+    - name: Create a directory to store the log files
+      become: true
+      file:
+        path: "/var/log/ansible"
+        state: directory
+        owner: "denzellgil"
+        group:  "denzellgil"
+        mode: 0755
+
+    - name: Copy log files from Control Node to Manage Node
+      become: true
+      fetch:
+         src: "/var/log/syslog"
+         dest: "/var/log/ansible/"
+         flat: yes
+      with_items:
+        - dmesg
+        - messages
+      register: fetch_result  
+
+    - name: Print the result of the fetch task
+      debug:
+        var: fetch_result      
